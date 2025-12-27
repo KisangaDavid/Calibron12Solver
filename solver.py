@@ -82,10 +82,9 @@ def solve(pieces: list[Piece], edges: list[Edge]):
                 solution.pop()
     return False
 
+# The board size and pieces corresponding to the Calibron 12 puzzle. To solve a different puzzle, simply modify these three values 
 BOARD_WIDTH = 56
 BOARD_HEIGHT = 56
-solution = []
-edges = [Edge(0,0,BOARD_WIDTH)]
 pieces = [
     Piece(28,14),
     Piece(28,6),
@@ -100,6 +99,9 @@ pieces = [
     Piece(21,14),
     Piece(21,14),
 ]
-pieces.sort(reverse = True)
 
+solution = []
+edges = [Edge(0,0,BOARD_WIDTH)]
+
+pieces.sort(reverse = True) # Using bigger pieces at the beginning leads to more pruning
 solve(pieces, edges)
