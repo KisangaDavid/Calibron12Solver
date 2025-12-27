@@ -1,0 +1,1 @@
+Solver for the famous Calibron 12 puzzle and others like it. Utilizes recursive backtracking and pruning to greatly cut down on the search space and find a solution quickly. Not fully optimized, but good enough for practical use - finding a solution to the classic Calibron 12 puzzle takes about half a second on my i5-1334U 1.3 GHz laptop. 
