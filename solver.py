@@ -1,29 +1,30 @@
+import timeit
 import heapq
 import copy
 
 class Piece:
     def __init__(self, width, height):
-        self.x = width
-        self.y = height
+        self.width = width
+        self.height = height
     
     # Pieces are ordered by area
     def __lt__(self, other):
-        return self.x * self.y < other.x * other.y
+        return self.width * self.height < other.width * other.height
     
     def __str__(self):
-        return f"{self.x} by {self.y}"
+        return f"{self.width} by {self.height}"
         
 class Edge:
     def __init__(self, x, y, length):
-        self.x = x
-        self.y = y
+        self.xPos = x
+        self.yPos = y
         self.length = length
 
     # Edges are ordered by position - the top-left most edge is considered the "smallest" for our min heap 
     def __lt__(self, other):
-        if self.y == other.y:
-            return self.x < other.x
-        return self.y < other.y
+        if self.yPos == other.yPos:
+            return self.xPos < other.xPos
+        return self.yPos < other.yPos
 
 class SolutionPart:
     def __init__(self, piece, xPos, yPos):
@@ -37,46 +38,44 @@ class SolutionPart:
 def place(piece: Piece, edges: list[Edge]):
     edgeToInsertOn = heapq.heappop(edges)
     # Check if piece fits vertically
-    if (piece.y + edgeToInsertOn.y > BOARD_HEIGHT):
+    if (piece.height + edgeToInsertOn.yPos > BOARD_HEIGHT):
         return False, -1, -1
     
     # Merge edges that are connected before checking if the piece fits horizontally
     nextEdge: Edge = None
     if len(edges) > 0:
         nextEdge: Edge = edges[0]
-        while nextEdge.y == edgeToInsertOn.y and nextEdge.x == edgeToInsertOn.x + edgeToInsertOn.length:
+        while nextEdge.yPos == edgeToInsertOn.yPos and nextEdge.xPos == edgeToInsertOn.xPos + edgeToInsertOn.length:
             heapq.heappop(edges)
-            edgeToInsertOn = Edge(edgeToInsertOn.x, edgeToInsertOn.y, edgeToInsertOn.length + nextEdge.length)
+            edgeToInsertOn = Edge(edgeToInsertOn.xPos, edgeToInsertOn.yPos, edgeToInsertOn.length + nextEdge.length)
             if (len(edges) < 1):
                 break
             nextEdge = edges[0]
 
     # Check if piece fits horizontally
-    if (piece.x > edgeToInsertOn.length):
+    if (piece.width > edgeToInsertOn.length):
         return False, -1, -1
     
     # Update the edges min heap to reflect the new piece, adding one or two edges as appropriate
-    if (edgeToInsertOn.length == piece.x):
-        heapq.heappush(edges, Edge(edgeToInsertOn.x, edgeToInsertOn.y + piece.y , piece.x))
+    if (edgeToInsertOn.length == piece.width):
+        heapq.heappush(edges, Edge(edgeToInsertOn.xPos, edgeToInsertOn.yPos + piece.height , piece.width))
     else:
-        heapq.heappush(edges, Edge(edgeToInsertOn.x, edgeToInsertOn.y + piece.y, piece.x))
-        heapq.heappush(edges, Edge(edgeToInsertOn.x + piece.x, edgeToInsertOn.y, edgeToInsertOn.length - piece.x))
-    return True, edgeToInsertOn.x, edgeToInsertOn.y
+        heapq.heappush(edges, Edge(edgeToInsertOn.xPos, edgeToInsertOn.yPos + piece.height, piece.width))
+        heapq.heappush(edges, Edge(edgeToInsertOn.xPos + piece.width, edgeToInsertOn.yPos, edgeToInsertOn.length - piece.width))
+    return True, edgeToInsertOn.xPos, edgeToInsertOn.yPos
 
 def solve(pieces: list[Piece], edges: list[Edge]):
     if (len(pieces) < 1):
-        for solutionPart in solution:
-            print(str(solutionPart))
         return True
     for idx, piece in enumerate(pieces):
         for rotate in (False, True):
             if (rotate):
-                piece = Piece(piece.y, piece.x)
+                piece = Piece(piece.height, piece.width)
             edgesCopy = copy.deepcopy(edges)
             fits, xPos, yPos = place(piece, edgesCopy)
             if fits:
                 solution.append(SolutionPart(piece, xPos, yPos))
-                newPieces = pieces[:idx] + pieces[idx+1:]
+                newPieces = pieces[:idx] + pieces[idx+1:] # Copying is inefficient
                 if solve(newPieces, edgesCopy):
                     return True
                 solution.pop()
@@ -102,6 +101,16 @@ pieces = [
 
 solution = []
 edges = [Edge(0,0,BOARD_WIDTH)]
+pieces.sort(reverse = True)
 
-pieces.sort(reverse = True) # Using bigger pieces at the beginning leads to more pruning
-solve(pieces, edges)
+# Measure execution time
+execution_time = timeit.timeit(
+    stmt="solve(pieces, edges)",
+    setup="from __main__ import solve, pieces, edges",
+    number=1
+) * 1000
+
+print(f"Solution found in {execution_time:.0f} milliseconds")
+
+for solutionPart in solution:
+    print(str(solutionPart))
